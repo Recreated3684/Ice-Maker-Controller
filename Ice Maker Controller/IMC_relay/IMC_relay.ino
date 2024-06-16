@@ -5,16 +5,16 @@
 #include <TimeAlarms.h>
 
 // WiFi credentials
-const char* ssid = "10Beauty";
-const char* password = "shinycanoe364";
+const char* ssid = "Troy and Abed in the Modem";
+const char* password = "12345678";
 
 // Define the NTP Client to get time
 WiFiUDP ntpUDP;
 const long utcOffsetInSeconds = -4 * 3600; // Adjust for your timezone (e.g., -5 hours for EST)
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds, 60000); // Update every minute
 
-const int switchPin = D1; // GPIO pin to be used as switch
-const int ledPin = LED_BUILTIN; // Built-in LED pin
+const int relayPin = D1; // GPIO pin to be used as relay control
+const int ledPin = LED_BUILTIN; // Built-in LED pin for debugging
 
 // Maximum number of days per alarm
 const int MAX_DAYS = 7;
@@ -33,7 +33,7 @@ AlarmSetting alarmSettings[] = {
   {23, 0, {5}, 1},       // 11:00 PM on Friday
   {7, 0, {7}, 1},        // 7:00 AM on Sunday
   {23, 0, {7}, 1},       // 11:00 PM on Sunday
-  {14, 26, {7}, 1}       // 7:52 PM on Monday
+  {14, 29, {7}, 1}       // 7:52 PM on Monday
 };
 
 // Function to convert int to timeDayOfWeek_t
@@ -52,8 +52,8 @@ timeDayOfWeek_t intToDayOfWeek(int day) {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(switchPin, OUTPUT);
-  digitalWrite(switchPin, LOW);
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, HIGH); // Initially set the pin to high (relay off)
 
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, HIGH); // LED is active LOW on ESP8266
@@ -90,7 +90,7 @@ void setAlarms() {
     for (int j = 0; j < alarmSettings[i].numDays; j++) {
       timeDayOfWeek_t dayOfWeek = intToDayOfWeek(alarmSettings[i].days[j]);
       if (dayOfWeek != dowInvalid) {
-        Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, triggerSwitch);
+        Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, triggerRelay);
       }
     }
   }
@@ -123,11 +123,11 @@ void printCurrentTime() {
   Serial.println();
 }
 
-void triggerSwitch() {
-  Serial.println("Switch triggered");
-  digitalWrite(switchPin, HIGH); // Set GPIO pin high
-  delay(500); // Keep the switch on for 500 ms
-  digitalWrite(switchPin, LOW); // Set GPIO pin low
+void triggerRelay() {
+  Serial.println("Relay triggered");
+  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
+  delay(500); // Keep the relay on for 500 ms
+  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
 
   // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
   blinkSOS();
