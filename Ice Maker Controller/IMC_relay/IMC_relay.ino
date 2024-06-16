@@ -29,11 +29,11 @@ struct AlarmSetting {
 
 // Define your alarms
 AlarmSetting alarmSettings[] = {
-  {7, 0, {1, 3, 5}, 3},  // 7:00 AM on Monday, Wednesday, and Friday
-  {23, 0, {5}, 1},       // 11:00 PM on Friday
-  {7, 0, {7}, 1},        // 7:00 AM on Sunday
-  {23, 0, {7}, 1},       // 11:00 PM on Sunday
-  {14, 29, {7}, 1}       // 7:52 PM on Monday
+  {7, 0, {1, 2, 3, 4, 5}, 5}, // Turn on, 7:00 AM on Weekdays
+  {9, 0, {6, 7}, 2}, // Turn on, 9:00 AM on Weekends
+  {9, 30, {1, 2, 3, 4, 5}, 5}, // Turn off, 9:30 AM on Weekdays
+  {16, 0, {1, 2, 3, 4, 5}, 5}, // Turn on, 4:00 PM on Weekdays
+  {23, 0, {1, 2, 3, 4, 5, 6, 7}, 7}, // Turn off, 11:00 PM Everyday
 };
 
 // Function to convert int to timeDayOfWeek_t
