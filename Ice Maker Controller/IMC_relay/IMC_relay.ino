@@ -75,6 +75,9 @@ void setup() {
 
   // Set alarms
   setAlarms();
+
+  // Blink SOS to prove I'm alive
+  blinkSOS();
 }
 
 void loop() {
@@ -126,7 +129,7 @@ void printCurrentTime() {
 void triggerRelay() {
   Serial.println("Relay triggered");
   digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(3000); // Keep the relay on for 500 ms
+  delay(2000); // Keep the relay on for 500 ms
   digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
 
   // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
