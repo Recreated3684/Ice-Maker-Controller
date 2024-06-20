@@ -85,7 +85,7 @@ void loop() {
   Alarm.delay(1000); // Wait for alarms to be triggered
 
   // Print the current time every second
-  printCurrentTime();
+//  printCurrentTime();
 }
 
 void setAlarms() {
@@ -106,25 +106,25 @@ time_t getNtpTime() {
   return timeClient.getEpochTime();
 }
 
-void printCurrentTime() {
-  Serial.print("Current time: ");
-  Serial.print(hour());
-  Serial.print(":");
-  if (minute() < 10) Serial.print("0"); // Leading zero for single digit minutes
-  Serial.print(minute());
-  Serial.print(":");
-  if (second() < 10) Serial.print("0"); // Leading zero for single digit seconds
-  Serial.print(second());
-  Serial.print(" ");
-  Serial.print(dayStr(weekday()));
-  Serial.print(", ");
-  Serial.print(day());
-  Serial.print(" ");
-  Serial.print(monthStr(month()));
-  Serial.print(" ");
-  Serial.print(year());
-  Serial.println();
-}
+//void printCurrentTime() {
+ // Serial.print("Current time: ");
+ // Serial.print(hour());
+  //Serial.print(":");
+  //if (minute() < 10) Serial.print("0"); // Leading zero for single digit minutes
+  //Serial.print(minute());
+  //Serial.print(":");
+  //if (second() < 10) Serial.print("0"); // Leading zero for single digit seconds
+  //Serial.print(second());
+  //Serial.print(" ");
+  //Serial.print(dayStr(weekday()));
+  //Serial.print(", ");
+  //Serial.print(day());
+  //Serial.print(" ");
+  //Serial.print(monthStr(month()));
+  //Serial.print(" ");
+  //Serial.print(year());
+  //Serial.println();
+//}
 
 void triggerRelay() {
   Serial.println("Relay triggered");
