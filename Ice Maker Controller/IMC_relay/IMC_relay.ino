@@ -1,4 +1,5 @@
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
@@ -6,7 +7,10 @@
 
 // WiFi credentials
 const char* ssid = "Troy and Abed in the Modem";
-const char* password = "12345678";
+const char* password = "";
+
+// Web server on port 80
+ESP8266WebServer server(80);
 
 // Define the NTP Client to get time
 WiFiUDP ntpUDP;
@@ -15,6 +19,17 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds, 60000); // Upda
 
 const int relayPin = D1; // GPIO pin to be used as relay control
 const int ledPin = LED_BUILTIN; // Built-in LED pin for debugging
+const int logSize = 100; // Maximum number of log entries
+
+// Log structure
+struct LogEntry {
+  time_t timestamp;
+  bool state; // true for ON, false for OFF
+};
+
+// Log array
+LogEntry logEntries[logSize];
+int logIndex = 0;
 
 // Maximum number of days per alarm
 const int MAX_DAYS = 7;
@@ -50,6 +65,53 @@ timeDayOfWeek_t intToDayOfWeek(int day) {
   }
 }
 
+// Function to add an entry to the log
+void addLogEntry(bool state) {
+  if (logIndex < logSize) {
+    logEntries[logIndex].timestamp = now();
+    logEntries[logIndex].state = state;
+    logIndex++;
+  } else {
+    Serial.println("Log is full!");
+  }
+}
+
+// Function to generate the log HTML
+String generateLogHTML() {
+  String html = "<html><head><title>Device Trigger Log</title></head><body>";
+  html += "<h1>Device Trigger Log</h1><table border='1'><tr><th>Index</th><th>Timestamp</th><th>State</th></tr>";
+  for (int i = 0; i < logIndex; i++) {
+    html += "<tr><td>" + String(i + 1) + "</td><td>" +
+            String(day(logEntries[i].timestamp)) + "/" +
+            String(month(logEntries[i].timestamp)) + "/" +
+            String(year(logEntries[i].timestamp)) + " " +
+            String(hour(logEntries[i].timestamp)) + ":" +
+            String(minute(logEntries[i].timestamp)) + ":" +
+            String(second(logEntries[i].timestamp)) + "</td><td>" +
+            (logEntries[i].state ? "ON" : "OFF") + "</td></tr>";
+  }
+  html += "</table></body></html>";
+  return html;
+}
+
+// Function to handle the root path
+void handleRoot() {
+  server.send(200, "text/html", generateLogHTML());
+}
+
+// Function to trigger the relay and log the event
+void triggerRelay() {
+  Serial.println("Relay triggered");
+  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
+  addLogEntry(true);
+  delay(2000); // Keep the relay on for 500 ms
+  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
+  addLogEntry(false);
+
+  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
+  blinkSOS();
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(relayPin, OUTPUT);
@@ -66,12 +128,18 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
+  // Print the IP address
+  Serial.println(WiFi.localIP());
+
   // Initialize NTP Client
   timeClient.begin();
-  
-  // Initialize time
   setSyncProvider(getNtpTime);
   setSyncInterval(600); // Sync every 10 minutes
+
+  // Start the server
+  server.on("/", handleRoot);
+  server.begin();
+  Serial.println("HTTP server started");
 
   // Set alarms
   setAlarms();
@@ -82,6 +150,7 @@ void setup() {
 
 void loop() {
   timeClient.update();
+  server.handleClient();
   Alarm.delay(1000); // Wait for alarms to be triggered
 
   // Print the current time every second
@@ -124,16 +193,6 @@ void printCurrentTime() {
   Serial.print(" ");
   Serial.print(year());
   Serial.println();
-}
-
-void triggerRelay() {
-  Serial.println("Relay triggered");
-  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(2000); // Keep the relay on for 500 ms
-  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
-
-  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
-  blinkSOS();
 }
 
 void blinkSOS() {
