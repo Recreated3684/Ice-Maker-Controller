@@ -74,7 +74,7 @@ void setup() {
   
   // Initialize time
   setSyncProvider(getNtpTime);
-  setSyncInterval(600); // Sync every 10 minutes
+  setSyncInterval(3600); // Sync every 1 hour
 
   // Set alarms
   setAlarms();
@@ -108,6 +108,7 @@ void setAlarms() {
       }
     }
   }
+  Alarm.alarmRepeat(dowTuesday, 19, 0, 0, triggerRelay); // An explicit alarm call to see if the error is in the handling of days or with the library.
   Serial.println("Alarms have been set.");
 }
 
@@ -124,7 +125,7 @@ time_t getNtpTime() {
     yield(); // Reset the watchdog timer
   }
   return timeClient.getEpochTime();
-  // Serial.print("getNtpTime_End");
+  // Serial.print("NTP Updated");
 }
 void printCurrentTime() {
   Serial.print("Current time: ");
@@ -149,7 +150,7 @@ void printCurrentTime() {
 void triggerRelay() {
   Serial.println("Relay triggered");
   digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(2000); // Keep the relay on for 2000 ms
+  delay(1000); // Keep the relay on for 2000 ms
   digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
 
   // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
