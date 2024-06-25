@@ -80,7 +80,7 @@ void setup() {
   setAlarms();
 
   // Blink SOS to prove I'm alive
-  // blinkSOS();
+   blinkSOS();
 }
 
 void loop() {
@@ -153,9 +153,9 @@ void triggerRelay() {
   digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
 
   // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
-  // blinkSOS();
+   blinkSOS();
 }
-/*
+
 void blinkSOS() {
   // Morse code: S (dot-dot-dot) O (dash-dash-dash) S (dot-dot-dot)
   // dot duration is 200 ms, dash duration is 600 ms, space between symbols is 200 ms, space between letters is 600 ms
@@ -203,4 +203,3 @@ void blinkDash(int duration) {
   digitalWrite(ledPin, HIGH); // LED off
   delay(duration);
 }
-*/
