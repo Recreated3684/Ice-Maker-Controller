@@ -50,11 +50,19 @@ timeDayOfWeek_t intToDayOfWeek(int day) {
   }
 }
 
+// Function to trigger the relay
+void triggerRelay() {
+  Serial.println("Relay triggered");
+  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
+  delay(2000); // Keep the relay on for 500 ms
+  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
+
+  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
+  blinkSOS();
+}
+
 void setup() {
   Serial.begin(115200);
-  Serial.println("ESP8266 has restarted.");
-  Serial.print("Reset reason: ");
-  Serial.println(ESP.getResetReason());
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, HIGH); // Initially set the pin to high (relay off)
 
@@ -69,32 +77,28 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
+  // Print the IP address
+  Serial.println(WiFi.localIP());
+
   // Initialize NTP Client
   timeClient.begin();
-  
-  // Initialize time
+  timeClient.update(); // Get initial time
+  setTime(timeClient.getEpochTime());
   setSyncProvider(getNtpTime);
-  setSyncInterval(600); // Sync every 10 minutes
+  setSyncInterval(3600); // Sync every hour
 
   // Set alarms
   setAlarms();
 
   // Blink SOS to prove I'm alive
-  // blinkSOS();
+  blinkSOS();
 }
 
 void loop() {
-  // Serial.println("Loop start");
-  timeClient.update();
-  // Break the 30000 milliseconds delay into smaller increments
-  for (int i = 0; i < 30; i++) {
-    Alarm.delay(1000); // Wait for 1 second
-    ESP.wdtFeed(); // Explicitly feed the watchdog timer
-  }
+  Alarm.delay(1000); // Wait for alarms to be triggered
+
   // Print the current time every second
-  printCurrentTime();
-  // blinkSOS();
-  // Serial.println("Loop end");
+ // printCurrentTime();
 }
 
 void setAlarms() {
@@ -102,30 +106,28 @@ void setAlarms() {
   for (int i = 0; i < sizeof(alarmSettings) / sizeof(alarmSettings[0]); i++) {
     for (int j = 0; j < alarmSettings[i].numDays; j++) {
       timeDayOfWeek_t dayOfWeek = intToDayOfWeek(alarmSettings[i].days[j]);
-      if (dayOfWeek != dowInvalid) {
-        Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, triggerRelay);
-        Serial.printf("Alarm set: %02d:%02d %s\n", alarmSettings[i].hour, alarmSettings[i].minute, dayStr(dayOfWeek));
+      if (dayOfWeek == dowInvalid) {
+        Serial.printf("Invalid day for alarm %d: %d\n", i, alarmSettings[i].days[j]);
+        continue; // Skip invalid days
       }
+      if (alarmSettings[i].hour < 0 || alarmSettings[i].hour > 23 || alarmSettings[i].minute < 0 || alarmSettings[i].minute > 59) {
+        Serial.printf("Invalid time for alarm %d: %02d:%02d\n", i, alarmSettings[i].hour, alarmSettings[i].minute);
+        continue; // Skip invalid times
+      }
+      Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, triggerRelay);
+      Serial.printf("Alarm set: %02d:%02d %s\n", alarmSettings[i].hour, alarmSettings[i].minute, dayStr(dayOfWeek));
     }
   }
   Serial.println("Alarms have been set.");
 }
 
 time_t getNtpTime() {
-  // Serial.print("getNtpTime_Start");
-  unsigned long start = millis();
-  unsigned long timeout = 5000; // 5 seconds timeout
   while (!timeClient.update()) {
     timeClient.forceUpdate();
-    if (millis() - start >= timeout) {
-      Serial.println("NTP update timed out");
-      return 0; // Return 0 if NTP update fails
-    }
-    yield(); // Reset the watchdog timer
   }
   return timeClient.getEpochTime();
-  // Serial.print("getNtpTime_End");
 }
+ /*
 void printCurrentTime() {
   Serial.print("Current time: ");
   Serial.print(hour());
@@ -145,17 +147,7 @@ void printCurrentTime() {
   Serial.print(year());
   Serial.println();
 }
-
-void triggerRelay() {
-  Serial.println("Relay triggered");
-  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(2000); // Keep the relay on for 2000 ms
-  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
-
-  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
-  // blinkSOS();
-}
-/*
+*/
 void blinkSOS() {
   // Morse code: S (dot-dot-dot) O (dash-dash-dash) S (dot-dot-dot)
   // dot duration is 200 ms, dash duration is 600 ms, space between symbols is 200 ms, space between letters is 600 ms
@@ -203,4 +195,3 @@ void blinkDash(int duration) {
   digitalWrite(ledPin, HIGH); // LED off
   delay(duration);
 }
-*/
