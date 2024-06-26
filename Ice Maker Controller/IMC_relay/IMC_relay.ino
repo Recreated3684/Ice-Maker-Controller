@@ -6,7 +6,7 @@
 
 // WiFi credentials
 const char* ssid = "Troy and Abed in the Modem";
-const char* password = "12345678";
+const char* password = "";
 
 // Define the NTP Client to get time
 WiFiUDP ntpUDP;
@@ -92,7 +92,7 @@ void loop() {
     ESP.wdtFeed(); // Explicitly feed the watchdog timer
   }
   // Print the current time every second
-  printCurrentTime();
+  // printCurrentTime();
   // blinkSOS();
   // Serial.println("Loop end");
 }
@@ -154,7 +154,7 @@ void triggerRelay() {
   digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
 
   // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
-   blinkSOS();
+  blinkSOS();
 }
 
 void blinkSOS() {
