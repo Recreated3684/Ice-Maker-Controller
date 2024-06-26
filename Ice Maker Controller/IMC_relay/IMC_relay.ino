@@ -15,7 +15,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds, 60000); // Upda
 
 const int relayPin = D1; // GPIO pin to be used as relay control
 const int ledPin = LED_BUILTIN; // Built-in LED pin for debugging
-
+/*
 // Maximum number of days per alarm
 const int MAX_DAYS = 7;
 
@@ -34,6 +34,9 @@ AlarmSetting alarmSettings[] = {
   {9, 30, {1, 2, 3, 4, 5}, 5}, // Turn off, 9:30 AM on Weekdays
   {16, 0, {1, 2, 3, 4, 5}, 5}, // Turn on, 4:00 PM on Weekdays
   {23, 0, {1, 2, 3, 4, 5, 6, 7}, 7}, // Turn off, 11:00 PM Everyday
+  {11, 41, {3}, 1},
+  {11, 42, {3}, 1},
+  {11, 43, {3}, 1},
 };
 
 // Function to convert int to timeDayOfWeek_t
@@ -49,7 +52,7 @@ timeDayOfWeek_t intToDayOfWeek(int day) {
     default: return dowInvalid;
   }
 }
-
+*/
 void setup() {
   Serial.begin(115200);
   Serial.println("ESP8266 has restarted.");
@@ -98,6 +101,7 @@ void loop() {
 }
 
 void setAlarms() {
+  /*
   Serial.println("Setting alarms...");
   for (int i = 0; i < sizeof(alarmSettings) / sizeof(alarmSettings[0]); i++) {
     for (int j = 0; j < alarmSettings[i].numDays; j++) {
@@ -108,8 +112,44 @@ void setAlarms() {
       }
     }
   }
-  Alarm.alarmRepeat(dowTuesday, 19, 0, 0, triggerRelay); // An explicit alarm call to see if the error is in the handling of days or with the library.
+  Alarm.alarmRepeat(dowWednesday, 10, 46, 0, triggerRelay); // An explicit alarm call to see if the error is in the handling of days or with the library.
   Serial.println("Alarms have been set.");
+  */
+
+  // Turn on, 7:00 AM on Weekdays (Monday to Friday)
+  Alarm.alarmRepeat(dowMonday, 7, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowTuesday, 7, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowWednesday, 7, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowThursday, 7, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowFriday, 7, 0, 0, triggerRelay);
+
+  // Turn on, 9:00 AM on Weekends (Saturday and Sunday)
+  Alarm.alarmRepeat(dowSaturday, 9, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowSunday, 9, 0, 0, triggerRelay);
+
+  // Turn off, 9:30 AM on Weekdays (Monday to Friday)
+  Alarm.alarmRepeat(dowMonday, 9, 30, 0, triggerRelay);
+  Alarm.alarmRepeat(dowTuesday, 9, 30, 0, triggerRelay);
+  Alarm.alarmRepeat(dowWednesday, 9, 30, 0, triggerRelay);
+  Alarm.alarmRepeat(dowThursday, 9, 30, 0, triggerRelay);
+  Alarm.alarmRepeat(dowFriday, 9, 30, 0, triggerRelay);
+
+  // Turn on, 4:00 PM on Weekdays (Monday to Friday)
+  Alarm.alarmRepeat(dowMonday, 16, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowTuesday, 16, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowWednesday, 16, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowThursday, 16, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowFriday, 16, 0, 0, triggerRelay);
+
+  // Turn off, 11:00 PM Everyday
+  Alarm.alarmRepeat(dowMonday, 23, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowTuesday, 23, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowWednesday, 23, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowThursday, 23, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowFriday, 23, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowSaturday, 23, 0, 0, triggerRelay);
+  Alarm.alarmRepeat(dowSunday, 23, 0, 0, triggerRelay);
+
 }
 
 time_t getNtpTime() {
