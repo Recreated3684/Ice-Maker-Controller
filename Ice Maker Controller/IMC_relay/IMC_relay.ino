@@ -5,8 +5,8 @@
 #include <TimeAlarms.h>
 
 // WiFi credentials
-const char* ssid = "Troy and Abed in the Modem";
-const char* password = "";
+const char* ssid = "10Beauty";
+const char* password = "shinycanoe364";
 
 // Define the NTP Client to get time
 WiFiUDP ntpUDP;
@@ -50,6 +50,24 @@ timeDayOfWeek_t intToDayOfWeek(int day) {
   }
 }
 
+// Function to trigger the relay
+void triggerRelay() {
+  Serial.println("Relay triggered");
+  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
+  delay(1000); // Keep the relay on for 1000 ms
+  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
+
+  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
+  blinkSOS();
+}
+
+// Function to synchronize time with NTP server
+void syncTimeWithNTP() {
+  Serial.println("Synchronizing time with NTP server...");
+  timeClient.update(); // Get initial time
+  setTime(timeClient.getEpochTime());
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("ESP8266 has restarted.");
@@ -70,37 +88,34 @@ void setup() {
   Serial.println("Connected to WiFi");
   Serial.println("Number of alarms supported: " + String(dtNBR_ALARMS));
 
-
   // Initialize NTP Client
   timeClient.begin();
-  
+  syncTimeWithNTP(); // Initial sync with NTP server
+
   // Initialize time
   setSyncProvider(getNtpTime);
-  setSyncInterval(3600); // Sync every 1 hour
 
   // Set alarms
   setAlarms();
 
   // Blink SOS to prove I'm alive
-   blinkSOS();
+  blinkSOS();
 }
 
 void loop() {
   // Serial.println("Loop start");
-  timeClient.update();
   // Break the 30000 milliseconds delay into smaller increments
   for (int i = 0; i < 30; i++) {
     Alarm.delay(1000); // Wait for 1 second
     ESP.wdtFeed(); // Explicitly feed the watchdog timer
   }
   // Print the current time every second
-  // printCurrentTime();
+  printCurrentTime();
   // blinkSOS();
   // Serial.println("Loop end");
 }
 
 void setAlarms() {
-  
   Serial.println("Setting alarms...");
   for (int i = 0; i < sizeof(alarmSettings) / sizeof(alarmSettings[0]); i++) {
     for (int j = 0; j < alarmSettings[i].numDays; j++) {
@@ -111,7 +126,9 @@ void setAlarms() {
       }
     }
   }
-  Alarm.alarmRepeat(dowWednesday, 10, 46, 0, triggerRelay); // An explicit alarm call to see if the error is in the handling of days or with the library.
+
+  // Sync time, 3:00 AM on Sunday
+  Alarm.alarmRepeat(dowThursday, 16, 13, 0, syncTimeWithNTP);
   Serial.println("Alarms have been set.");
 }
 
@@ -130,6 +147,7 @@ time_t getNtpTime() {
   return timeClient.getEpochTime();
   // Serial.print("NTP Updated");
 }
+
 void printCurrentTime() {
   Serial.print("Current time: ");
   Serial.print(hour());
@@ -148,16 +166,6 @@ void printCurrentTime() {
   Serial.print(" ");
   Serial.print(year());
   Serial.println();
-}
-
-void triggerRelay() {
-  Serial.println("Relay triggered");
-  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(1000); // Keep the relay on for 1000 ms
-  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
-
-  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
-  blinkSOS();
 }
 
 void blinkSOS() {
