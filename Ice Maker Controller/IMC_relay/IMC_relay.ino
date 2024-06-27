@@ -153,7 +153,7 @@ void printCurrentTime() {
 void triggerRelay() {
   Serial.println("Relay triggered");
   digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(1000); // Keep the relay on for 2000 ms
+  delay(1000); // Keep the relay on for 1000 ms
   digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
 
   // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
