@@ -184,7 +184,7 @@ void printCurrentTime() {
   if (minute() < 10) Serial.print("0"); // Leading zero for single digit minutes
   Serial.print(minute());
   Serial.print(":");
-  if (second() < 10) Serial print("0"); // Leading zero for single digit seconds
+  if (second() < 10) Serial.print("0"); // Leading zero for single digit seconds
   Serial.print(second());
   Serial.print(" ");
   Serial.print(dayStr(weekday()));
