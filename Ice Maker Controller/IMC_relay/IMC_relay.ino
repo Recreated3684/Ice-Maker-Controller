@@ -15,6 +15,11 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds, 60000); // Upda
 
 const int relayPin = D1; // GPIO pin to be used as relay control
 const int ledPin = LED_BUILTIN; // Built-in LED pin for debugging
+const int powerStatePin = A0; // Analog pin to read the LED voltage
+
+// Thresholds for detecting the power state
+const int onThreshold = 500; // Example threshold for ON state
+const int offThreshold = 200; // Example threshold for OFF state
 
 // Maximum number of days per alarm
 const int MAX_DAYS = 7;
@@ -25,15 +30,16 @@ struct AlarmSetting {
   int minute;
   int days[MAX_DAYS];
   int numDays;
+  bool isTurnOn; // true for turning on, false for turning off
 };
 
 // Define your alarms
 AlarmSetting alarmSettings[] = {
-  {7, 0, {1, 2, 3, 4, 5}, 5}, // Turn on, 7:00 AM on Weekdays
-  {9, 0, {6, 7}, 2}, // Turn on, 9:00 AM on Weekends
-  {9, 30, {1, 2, 3, 4, 5}, 5}, // Turn off, 9:30 AM on Weekdays
-  {16, 0, {1, 2, 3, 4, 5}, 5}, // Turn on, 4:00 PM on Weekdays
-  {23, 0, {1, 2, 3, 4, 5, 6, 7}, 7}, // Turn off, 11:00 PM Everyday
+  {7, 0, {1, 2, 3, 4, 5}, 5, true}, // Turn on, 7:00 AM on Weekdays
+  {9, 0, {6, 7}, 2, true}, // Turn on, 9:00 AM on Weekends
+  {9, 30, {1, 2, 3, 4, 5}, 5, false}, // Turn off, 9:30 AM on Weekdays
+  {16, 0, {1, 2, 3, 4, 5}, 5, true}, // Turn on, 4:00 PM on Weekdays
+  {23, 0, {1, 2, 3, 4, 5, 6, 7}, 7, false}, // Turn off, 11:00 PM Everyday
 };
 
 // Function to convert int to timeDayOfWeek_t
@@ -48,6 +54,51 @@ timeDayOfWeek_t intToDayOfWeek(int day) {
     case 7: return dowSunday;
     default: return dowInvalid;
   }
+}
+
+// Function to read the power state over a period of time
+bool isDeviceOn() {
+  unsigned long start = millis();
+  unsigned long duration = 1000; // Measure for 1 second
+  bool sawOffState = false;
+
+  while (millis() - start < duration) {
+    int value = analogRead(powerStatePin);
+    // Serial.print("Analog value: ");
+    // Serial.println(value);
+    if (value < offThreshold) {
+      sawOffState = true;
+    }
+    delay(10); // Sample every 10ms
+  }
+
+  return !sawOffState;
+}
+
+// Function to trigger the relay to turn the device ON or OFF
+void triggerRelay(bool turnOn) {
+  bool currentState = isDeviceOn();
+  if ((turnOn && !currentState) || (!turnOn && currentState)) {
+    Serial.println("Toggling relay");
+    digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
+    delay(1000); // Keep the relay on for 1000 ms
+    digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
+    delay(2000); // Wait for the device to change state
+  } else {
+    Serial.println("Device already in desired state");
+  }
+}
+
+// Function to trigger the relay to turn the device ON
+void turnOnDevice() {
+  Serial.println("Turn ON command received");
+  triggerRelay(true);
+}
+
+// Function to trigger the relay to turn the device OFF
+void turnOffDevice() {
+  Serial.println("Turn OFF command received");
+  triggerRelay(false);
 }
 
 void setup() {
@@ -70,10 +121,9 @@ void setup() {
   Serial.println("Connected to WiFi");
   Serial.println("Number of alarms supported: " + String(dtNBR_ALARMS));
 
-
   // Initialize NTP Client
   timeClient.begin();
-  
+
   // Initialize time
   setSyncProvider(getNtpTime);
   setSyncInterval(3600); // Sync every 1 hour
@@ -82,41 +132,38 @@ void setup() {
   setAlarms();
 
   // Blink SOS to prove I'm alive
-   blinkSOS();
+  blinkSOS();
 }
 
 void loop() {
-  // Serial.println("Loop start");
   timeClient.update();
   // Break the 30000 milliseconds delay into smaller increments
   for (int i = 0; i < 30; i++) {
     Alarm.delay(1000); // Wait for 1 second
     ESP.wdtFeed(); // Explicitly feed the watchdog timer
   }
-  // Print the current time every second
-  // printCurrentTime();
-  // blinkSOS();
-  // Serial.println("Loop end");
 }
 
 void setAlarms() {
-  
   Serial.println("Setting alarms...");
   for (int i = 0; i < sizeof(alarmSettings) / sizeof(alarmSettings[0]); i++) {
     for (int j = 0; j < alarmSettings[i].numDays; j++) {
       timeDayOfWeek_t dayOfWeek = intToDayOfWeek(alarmSettings[i].days[j]);
       if (dayOfWeek != dowInvalid) {
-        Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, triggerRelay);
-        Serial.printf("Alarm set: %02d:%02d %s\n", alarmSettings[i].hour, alarmSettings[i].minute, dayStr(dayOfWeek));
+        if (alarmSettings[i].isTurnOn) {
+          Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, turnOnDevice);
+        } else {
+          Alarm.alarmRepeat(dayOfWeek, alarmSettings[i].hour, alarmSettings[i].minute, 0, turnOffDevice);
+        }
+        Serial.printf("Alarm set: %02d:%02d %s (%s)\n", alarmSettings[i].hour, alarmSettings[i].minute, dayStr(dayOfWeek), alarmSettings[i].isTurnOn ? "ON" : "OFF");
       }
     }
   }
-  Alarm.alarmRepeat(dowWednesday, 10, 46, 0, triggerRelay); // An explicit alarm call to see if the error is in the handling of days or with the library.
+  Alarm.alarmRepeat(dowWednesday, 10, 46, 0, turnOffDevice); // An explicit alarm call to see if the error is in the handling of days or with the library.
   Serial.println("Alarms have been set.");
 }
 
 time_t getNtpTime() {
-  // Serial.print("getNtpTime_Start");
   unsigned long start = millis();
   unsigned long timeout = 5000; // 5 seconds timeout
   while (!timeClient.update()) {
@@ -128,8 +175,8 @@ time_t getNtpTime() {
     yield(); // Reset the watchdog timer
   }
   return timeClient.getEpochTime();
-  // Serial.print("NTP Updated");
 }
+
 void printCurrentTime() {
   Serial.print("Current time: ");
   Serial.print(hour());
@@ -148,16 +195,6 @@ void printCurrentTime() {
   Serial.print(" ");
   Serial.print(year());
   Serial.println();
-}
-
-void triggerRelay() {
-  Serial.println("Relay triggered");
-  digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
-  delay(1000); // Keep the relay on for 1000 ms
-  digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
-
-  // SOS pattern: dot-dot-dot, dash-dash-dash, dot-dot-dot
-  blinkSOS();
 }
 
 void blinkSOS() {
