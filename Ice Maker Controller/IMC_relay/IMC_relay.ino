@@ -18,7 +18,7 @@ const int ledPin = LED_BUILTIN; // Built-in LED pin for debugging
 const int powerStatePin = A0; // Analog pin to read the LED voltage
 
 // Thresholds for detecting the power state
-const int onThreshold = 800; // Example threshold for ON state
+const int onThreshold = 500; // Example threshold for ON state
 const int offThreshold = 200; // Example threshold for OFF state
 
 // Maximum number of days per alarm
@@ -64,8 +64,8 @@ bool isDeviceOn() {
 
   while (millis() - start < duration) {
     int value = analogRead(powerStatePin);
-    Serial.print("Analog value: ");
-    Serial.println(value);
+    // Serial.print("Analog value: ");
+    // Serial.println(value);
     if (value < offThreshold) {
       sawOffState = true;
     }
