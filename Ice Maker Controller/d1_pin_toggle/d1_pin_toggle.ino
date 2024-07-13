@@ -1,12 +1,15 @@
 #include <ESP8266WiFi.h>
 
 // Define the GPIO pin
-const int switchPin = D1; // GPIO pin to be used as switch
+const int switchPin = D8; // GPIO pin to be used as switch
+const int ledPin = LED_BUILTIN;
 
 void setup() {
   Serial.begin(115200);
   pinMode(switchPin, OUTPUT);
   digitalWrite(switchPin, LOW); // Initially set the pin to low
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
 }
 
 void loop() {
