@@ -80,9 +80,9 @@ void triggerRelay(bool turnOn) {
   bool currentState = isDeviceOn();
   if ((turnOn && !currentState) || (!turnOn && currentState)) {
     Serial.println("Toggling relay");
-    digitalWrite(relayPin, LOW); // Set GPIO pin low to activate relay
+    digitalWrite(relayPin, HIGH); // Set GPIO pin low to activate relay
     delay(1000); // Keep the relay on for 1000 ms
-    digitalWrite(relayPin, HIGH); // Set GPIO pin high to deactivate relay
+    digitalWrite(relayPin, LOW); // Set GPIO pin high to deactivate relay
     delay(2000); // Wait for the device to change state
   } else {
     Serial.println("Device already in desired state");
@@ -107,7 +107,7 @@ void setup() {
   Serial.print("Reset reason: ");
   Serial.println(ESP.getResetReason());
   pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, HIGH); // Initially set the pin to high (relay off)
+  digitalWrite(relayPin, LOW); // Initially set the pin to high (relay off)
 
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, HIGH); // LED is active LOW on ESP8266
@@ -119,7 +119,7 @@ void setup() {
     Serial.println("Connecting to WiFi...");
   }
   Serial.println("Connected to WiFi");
-  Serial.println("Number of alarms supported: " + String(dtNBR_ALARMS));
+  Serial.println("Number of alarms supported: " + String(dtNBR_ALARMS)); // prints the max quantity of alarms supported by the TimeAlarms.h library. Default is 12. Edit this file if more than 12 are needed.
 
   // Initialize NTP Client
   timeClient.begin();
